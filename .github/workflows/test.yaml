@@ -12,12 +12,12 @@ jobs:
   unit-test:
     strategy:
       matrix:
-        go: [ 1.19 ]
+        go: [1.19]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v3
       - name: Install Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491  # v4
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v4
         with:
           go-version: ${{ matrix.go }}
       - name: Prepare external plugin tests
@@ -36,9 +36,9 @@ jobs:
     steps:
       - name: print hostname
         run: hostname
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v3
       - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@94d61e3205b61acf4ddabfeb13c5f8a13eb4167b  # v2
+        uses: reviewdog/action-golangci-lint@94d61e3205b61acf4ddabfeb13c5f8a13eb4167b # v2
         with:
           tool_name: golangci-lint
           fail_on_error: true
@@ -47,28 +47,20 @@ jobs:
   integration-tests:
     strategy:
       matrix:
-        go: [ 1.19 ]
+        go: [1.19]
     runs-on: [self-hosted, public, linux, x64]
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v3
       - name: Install Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491  # v4
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v4
         with:
           go-version: ${{ matrix.go }}
       - name: build
         run: go build
-      - name: Clone Terragoat - vulnerable terraform
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v3
-        with:
-          repository: bridgecrewio/terragoat  # clone https://github.com/bridgecrewio/terragoat/
-          fetch-depth: 0
-          clean: false
-          path: 'terragoat'
-          ref: 063dc2db3bb036160ed39d3705508ee8293a27c8
       - name: Run yor
         run: |
           git config --local user.email "action@github.com"
           ./yor list-tags -g code2cloud,git > list-tags-result.txt
-          ./yor tag -d terragoat -o json --output-json-file result.json
+          ./yor tag -d . -o json --output-json-file result.json
       - name: Run integration tests
         run: go test -race ./tests/integration/...

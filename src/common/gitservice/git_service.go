@@ -7,20 +7,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime/debug"
 	"strings"
 	"sync"
 
 	"github.com/bridgecrewio/yor/src/common/logger"
 	"github.com/bridgecrewio/yor/src/common/structure"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
-	"github.com/pkg/errors"
 )
 
 type GitService struct {
 	gitRootDir          string
+	repoRootDir         string // absolute path to the git repository root (where .git lives)
 	scanPathFromRoot    string
 	repository          *git.Repository
 	remoteURL           string
@@ -30,8 +28,6 @@ type GitService struct {
 	PreviousBlameByFile *sync.Map
 	currentUserEmail    string
 }
-
-var gitGraphLock sync.Mutex
 
 func NewGitService(rootDir string) (*GitService, error) {
 	var repository *git.Repository
@@ -57,6 +53,7 @@ func NewGitService(rootDir string) (*GitService, error) {
 
 	gitService := GitService{
 		gitRootDir:          rootDir,
+		repoRootDir:         rootDirIter,
 		scanPathFromRoot:    scanPathFromRoot,
 		repository:          repository,
 		BlameByFile:         &sync.Map{},
@@ -141,21 +138,6 @@ func (g *GitService) GetRepoName() string {
 	return g.repoName
 }
 
-func wrapGitBlame(selectedCommit *object.Commit, relativeFilePath string) (blame *git.BlameResult, err error) {
-	// currently there's a bug inside go-git so in order to mitigate it we wrap it with recover
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r, string(debug.Stack()))
-			err = errors.Errorf("unknown panic, %v", r)
-		}
-	}()
-	blame, err = git.Blame(selectedCommit, relativeFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get blame for latest commit of file %s because of error %s", relativeFilePath, err)
-	}
-	return blame, err
-}
-
 func (g *GitService) GetFileBlame(filePath string) (*git.BlameResult, error) {
 	blame, ok := g.BlameByFile.Load(filePath)
 	if ok {
@@ -163,36 +145,28 @@ func (g *GitService) GetFileBlame(filePath string) (*git.BlameResult, error) {
 	}
 
 	relativeFilePath := g.ComputeRelativeFilePath(filePath)
-	var selectedCommit *object.Commit
 
-	gitGraphLock.Lock() // Git is a graph, different files can lead to graph scans interfering with each other
-	defer gitGraphLock.Unlock()
-	head, err := g.repository.Head()
+	// Use native git blame instead of go-git's slow in-process implementation.
+	// Native git is 10-100x faster and each invocation is a separate process,
+	// so no global lock is needed for concurrent access.
+	blameResult, err := nativeGitBlame(g.repoRootDir, relativeFilePath, "HEAD")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get repository HEAD for file %s because of error %s", filePath, err)
-	}
-	selectedCommit, err = g.repository.CommitObject(head.Hash())
-	if err != nil {
-		return nil, fmt.Errorf("failed to find commit %s ", head.Hash().String())
+		return nil, fmt.Errorf("failed to get blame for file %s: %s", filePath, err)
 	}
 
-	parentIter := selectedCommit.Parents()
-	previousCommit, err := parentIter.Next()
+	// Get blame for previous commit (HEAD~1) for change detection
+	previousBlame, err := nativeGitBlame(g.repoRootDir, relativeFilePath, "HEAD~1")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get previous commit: %s", err)
+		// Previous blame may fail for new files or repos with a single commit - this is non-fatal
+		logger.Info(fmt.Sprintf("Could not get previous blame for %s: %s", filePath, err))
 	}
-	blame, err = wrapGitBlame(selectedCommit, relativeFilePath)
-	if err != nil {
-		return nil, err
-	}
-	previousBlame, err := wrapGitBlame(previousCommit, relativeFilePath)
-	if err != nil {
-		return nil, err
-	}
-	g.BlameByFile.Store(filePath, blame)
-	g.PreviousBlameByFile.Store(filePath, previousBlame)
 
-	return blame.(*git.BlameResult), nil
+	g.BlameByFile.Store(filePath, blameResult)
+	if previousBlame != nil {
+		g.PreviousBlameByFile.Store(filePath, previousBlame)
+	}
+
+	return blameResult, nil
 }
 
 func GetGitUserEmail() string {

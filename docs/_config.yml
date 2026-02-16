@@ -1,7 +1,7 @@
-remote_theme: bridgecrewio/yor-theme
+remote_theme: fraserc182/yor-theme
 
-site_author: Palo Alto Networks
-repo_url: "https://github.com/bridgecrewio/yor/"
+site_author: fraserc182
+repo_url: "https://github.com/fraserc182/yor/"
 
 edit_on_github: true
 github_docs_folder: true
@@ -16,4 +16,4 @@ plugins:
 
 jekyll_get_json:
   - data: menus
-    json: './menus.json'
+    json: "./menus.json"

@@ -21,5 +21,5 @@ Resources:
       Encrypted: true
       #Encrypted: false
       AvailabilityZone: us-west-2a
-      Tags:    
+      Tags:
     DeletionPolicy: Snapshot
