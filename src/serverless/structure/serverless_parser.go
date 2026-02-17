@@ -75,7 +75,7 @@ func (p *ServerlessParser) ParseFile(filePath string) ([]structure.IBlock, error
 	parsedBlocks := make([]structure.IBlock, 0)
 	fileFormat := utils.GetFileFormat(filePath)
 	fileName := filepath.Base(filePath)
-	if !(fileName == fmt.Sprintf("serverless.%s", fileFormat) || fileName == fmt.Sprintf("config.%s", fileFormat)) {
+	if fileName != fmt.Sprintf("serverless.%s", fileFormat) && fileName != fmt.Sprintf("config.%s", fileFormat) {
 		return nil, nil
 	}
 	// #nosec G304 - file is from user

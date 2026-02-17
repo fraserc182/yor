@@ -23,7 +23,7 @@ func (cb *CustomBlock) Init(_ string, _ interface{}) {}
 func (cb *CustomBlock) UpdateTags() {}
 
 func (cb *CustomBlock) GetFramework() string {
-	if strings.Contains(cb.Block.FilePath, "serverless") {
+	if strings.Contains(cb.FilePath, "serverless") {
 		return "Serverless"
 	}
 	return "Cloudformation"

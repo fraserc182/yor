@@ -26,9 +26,20 @@ linters:
     - unconvert
     - unparam
     - revive
+  settings:
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
   exclusions:
     paths:
       - "tests/yor_plugins"
+    rules:
+      # Ignore unchecked errors in test cleanup (defer os.RemoveAll, os.Unsetenv, etc.)
+      - linters: [errcheck]
+        path: "_test\\.go"
 
 formatters:
   enable:

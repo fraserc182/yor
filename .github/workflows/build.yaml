@@ -54,7 +54,11 @@ jobs:
           go build -buildmode=plugin -o tests/yor_plugins/tag_group_example/extra_tag_groups.so tests/yor_plugins/tag_group_example/*.go
       - name: Test
         run: |
-          go build -v && go test ./src/... -covermode=count -coverprofile=coverage.out
+          go build -v
+          # Run plugin tests without coverage — coverage instrumentation changes
+          # compiled packages, making them incompatible with pre-built plugins.
+          go test ./src/common/runner/... -v
+          go test $(go list ./src/... | grep -v '/common/runner') -covermode=count -coverprofile=coverage.out
           go tool cover -func=coverage.out -o=coverage.out
       - name: Go Coverage Badge # Pass the `coverage.out` output to this action
         uses: tj-actions/coverage-badge-go@7f447a2281e6c95d57526e53b2e800dfb3c07425 # v2

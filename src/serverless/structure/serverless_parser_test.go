@@ -39,7 +39,8 @@ func TestServerlessParser_ParseFile(t *testing.T) {
 		var func2Block *ServerlessBlock
 		for _, block := range slsBlocks {
 			castedBlock := block.(*ServerlessBlock)
-			if castedBlock.Name == "myFunction" {
+			switch castedBlock.Name {
+			case "myFunction":
 				func1Block = castedBlock
 				assert.Equal(t, structure.Lines{Start: 13, End: 18}, func1Block.GetLines())
 				assert.Equal(t, "myFunction", func1Block.GetResourceID())
@@ -50,7 +51,7 @@ func TestServerlessParser_ParseFile(t *testing.T) {
 				}
 
 				assert.ElementsMatch(t, expectedTags, func1Block.GetExistingTags())
-			} else if castedBlock.Name == "myFunction2" {
+			case "myFunction2":
 				func2Block = castedBlock
 				assert.Equal(t, structure.Lines{Start: 19, End: 24}, func2Block.GetLines())
 				assert.Equal(t, "myFunction2", func2Block.GetResourceID())

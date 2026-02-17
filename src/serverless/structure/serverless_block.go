@@ -44,7 +44,7 @@ func (b *ServerlessBlock) UpdateTags() {
 }
 
 func (b *ServerlessBlock) GetTagsLines() structure.Lines {
-	return b.Block.TagLines
+	return b.TagLines
 }
 
 func (b *ServerlessBlock) GetSeparator() string {

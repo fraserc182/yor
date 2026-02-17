@@ -71,9 +71,10 @@ func TestMultipleCommits(t *testing.T) {
 		// check if the resource has the right commit hash and save the yor trace
 		var resource1Trace string
 		for _, tag := range report.NewResourceTags {
-			if tag.TagKey == "git_commit" {
+			switch tag.TagKey {
+			case "git_commit":
 				assert.Equal(t, commit1.String(), tag.UpdatedValue)
-			} else if tag.TagKey == "yor_trace" {
+			case "yor_trace":
 				resource1Trace = tag.UpdatedValue
 			}
 		}
