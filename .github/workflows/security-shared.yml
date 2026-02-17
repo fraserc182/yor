@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   gosec:
-    runs-on: [self-hosted, public, linux, x64]
+    runs-on: ubuntu-latest
     env:
       GO111MODULE: on
     steps:
@@ -24,7 +24,7 @@ jobs:
         with:
           args: "./..."
   trufflehog-secrets:
-    runs-on: [self-hosted, public, linux, x64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v3
         with:

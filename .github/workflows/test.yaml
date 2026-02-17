@@ -12,7 +12,7 @@ jobs:
   unit-test:
     strategy:
       matrix:
-        go: [1.19]
+        go: ["1.26"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v3
@@ -47,8 +47,8 @@ jobs:
   integration-tests:
     strategy:
       matrix:
-        go: [1.19]
-    runs-on: [self-hosted, public, linux, x64]
+        go: ["1.26"]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v3
       - name: Install Go
