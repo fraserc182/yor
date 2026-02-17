@@ -13,6 +13,7 @@ import (
 	"github.com/bridgecrewio/yor/src/common/logger"
 	"github.com/bridgecrewio/yor/src/common/structure"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
@@ -27,6 +28,7 @@ type GitService struct {
 	BlameByFile         *sync.Map
 	PreviousBlameByFile *sync.Map
 	currentUserEmail    string
+	previousCommit      *object.Commit // cached during init to avoid concurrent go-git access
 }
 
 func NewGitService(rootDir string) (*GitService, error) {
@@ -61,6 +63,24 @@ func NewGitService(rootDir string) (*GitService, error) {
 	}
 	err = gitService.setOrgAndName()
 	gitService.currentUserEmail = GetGitUserEmail()
+
+	// Cache the previous commit during init to avoid concurrent access to
+	// the go-git Repository object later. go-git's Repository is not
+	// thread-safe, but GetPreviousBlameResult was previously calling
+	// repository.Head()/CommitObject()/Parents() from multiple goroutines.
+	if repository != nil {
+		ref, refErr := repository.Head()
+		if refErr == nil {
+			commit, commitErr := repository.CommitObject(ref.Hash())
+			if commitErr == nil {
+				parentIter := commit.Parents()
+				previousCommit, parentErr := parentIter.Next()
+				if parentErr == nil {
+					gitService.previousCommit = previousCommit
+				}
+			}
+		}
+	}
 
 	return &gitService, err
 }

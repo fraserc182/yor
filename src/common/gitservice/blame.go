@@ -22,31 +22,16 @@ type GitBlame struct {
 }
 
 func GetPreviousBlameResult(gitSvc *GitService, filePath string) (*git.BlameResult, *object.Commit) {
-	if gitSvc.repository == nil {
-		return nil, nil
-	}
-	ref, err := gitSvc.repository.Head()
-	if err != nil {
-		return nil, nil
-	}
-	commit, err := gitSvc.repository.CommitObject(ref.Hash())
-	if err != nil {
-		return nil, nil
-	}
-	parentIter := commit.Parents()
-	previousCommit, err := parentIter.Next()
-	if err != nil {
+	if gitSvc.previousCommit == nil {
 		return nil, nil
 	}
 
-	var previousBlameResult *git.BlameResult
 	result, ok := gitSvc.PreviousBlameByFile.Load(filePath)
 	if !ok {
 		return nil, nil
 	}
 
-	previousBlameResult = result.(*git.BlameResult)
-	return previousBlameResult, previousCommit
+	return result.(*git.BlameResult), gitSvc.previousCommit
 }
 
 func NewGitBlame(relativeFilePath string, filePath string, lines structure.Lines, blameResult *git.BlameResult, gitSvc *GitService) *GitBlame {
