@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/bridgecrewio/goformation/v5/intrinsics"
 	"github.com/bridgecrewio/yor/src/common"
@@ -27,8 +26,6 @@ type ServerlessParser struct {
 	YamlParser           types.YamlParser
 	skippedByCommentList []string
 }
-
-var slsParseLock sync.Mutex
 
 func (p *ServerlessParser) Name() string {
 	return "Serverless"
@@ -57,9 +54,9 @@ func serverlessParse(file string) (*structure.Template, error) {
 			err = fmt.Errorf("failed to parse sls file %v: %v", file, e)
 		}
 	}()
-	slsParseLock.Lock()
+	utils.IntrinsicsLock.Lock()
 	template, err = Open(file)
-	slsParseLock.Unlock()
+	utils.IntrinsicsLock.Unlock()
 	return template, err
 }
 

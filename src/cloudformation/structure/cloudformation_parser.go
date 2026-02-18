@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-	"sync"
 
 	goformationTags "github.com/awslabs/goformation/v5/cloudformation/tags"
 	"github.com/bridgecrewio/goformation/v5"
@@ -35,8 +34,6 @@ type CloudformationParser struct {
 const TagsAttributeName = "Tags"
 const ResourcesStartToken = "Resources"
 const EnvVarsPath = "Resources/*/Properties/Environment/Variables/*"
-
-var goformationLock sync.Mutex
 
 func (p *CloudformationParser) Name() string {
 	return "CloudFormation"
@@ -81,7 +78,9 @@ func (p *CloudformationParser) ValidFile(filePath string) bool {
 	}
 
 	if !strings.HasSuffix(filePath, ".json") {
+		utils.IntrinsicsLock.Lock()
 		bytes, err = sanathyaml.YAMLToJSON(bytes)
+		utils.IntrinsicsLock.Unlock()
 		if err != nil {
 			logger.Warning(fmt.Sprintf("Error converting YAML to JSON for file %s, skipping: %v", filePath, err))
 			return false
@@ -115,9 +114,9 @@ func goformationParse(file string) (*cloudformation.Template, error) {
 
 func (p *CloudformationParser) ParseFile(filePath string) ([]structure.IBlock, error) {
 	var skipResourcesByComment []string
-	goformationLock.Lock()
+	utils.IntrinsicsLock.Lock()
 	template, err := goformationParse(filePath)
-	goformationLock.Unlock()
+	utils.IntrinsicsLock.Unlock()
 	if err != nil || template == nil {
 		logger.Warning(fmt.Sprintf("There was an error processing the cloudformation template %v: %s", filePath, err))
 		if err == nil {

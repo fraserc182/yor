@@ -8,12 +8,19 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/bridgecrewio/yor/src/common"
 	"github.com/bridgecrewio/yor/src/common/logger"
 	"github.com/bridgecrewio/yor/src/common/structure"
 )
+
+// IntrinsicsLock protects all calls to goformation/intrinsics.ProcessYAML and
+// sanathkr/go-yaml that write to a process-global tag-unmarshaler map.
+// Both the CloudFormation and Serverless parsers must hold this lock before
+// invoking any of those functions.
+var IntrinsicsLock sync.Mutex
 
 // RemoveGcpInvalidChars Source of regex: https://cloud.google.com/compute/docs/labeling-resources
 var RemoveGcpInvalidChars = regexp.MustCompile(`[^\p{Ll}\p{Lo}\p{N}_-]`)
