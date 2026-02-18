@@ -58,6 +58,9 @@ jobs:
           # Run plugin tests without coverage — coverage instrumentation changes
           # compiled packages, making them incompatible with pre-built plugins.
           go test ./src/common/runner/... -v
+          # Runner tests modify test fixture files (ebs.json, tagged_kms.tf, etc.)
+          # via TagDirectory() calls. Restore them before running remaining tests.
+          git checkout -- tests/
           go test $(go list ./src/... | grep -v '/common/runner') -covermode=count -coverprofile=coverage.out
           go tool cover -func=coverage.out -o=coverage.out
       - name: Go Coverage Badge # Pass the `coverage.out` output to this action
