@@ -18,6 +18,8 @@ builds:
     ignore:
       - goarch: "386"
         goos: darwin
+      - goarch: arm
+        goos: windows
 
 archives:
   - id: yor
